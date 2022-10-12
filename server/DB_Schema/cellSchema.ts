@@ -3,6 +3,7 @@ import * as mongoose from "mongoose"
 
 
 export interface ICell{
+    index: number,
     emoji:String,
     timeStamp:Date,
     user: mongoose.Types.ObjectId
@@ -11,9 +12,10 @@ export interface ICell{
 
 
 const Cell = new mongoose.Schema({
-    emoji: {type:String, required: true},
-    timeStamp: {type:Date, required: true},
-    user: {type: mongoose.Types.ObjectId, default: undefined}
+    index: {type:Number, required: true},
+    emoji: {type:String, required: true, default: " "},
+    timeStamp: {type:Date, required: true, default: Date.now()},
+    user: {type: mongoose.Types.ObjectId, default: null}
 })
 
 export default mongoose.model<ICell>('Cells', Cell, 'cells')

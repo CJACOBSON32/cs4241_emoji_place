@@ -1,47 +1,73 @@
-import express from "express";
-import Cells from './DB_Schema/cellSchema';
-import Users, { IUser } from './DB_Schema/userSchema.js';
+import express, { Request, Response } from "express";
+import Cell, { ICell } from "./DB_Schema/cellSchema.js";
+import Users, { IUser } from "./DB_Schema/userSchema.js";
 import mongoose, { Collection } from "mongoose";
-import * as dotenv from "dotenv"
+import * as dotenv from "dotenv";
+import session from "express-session";
+import {router as authRouter, checkAuthentication} from "./Routes/auth.js"
+import {router as gridRouter} from './Routes/gridRouter.js'
+dotenv.config({ path: "../.env" });
 
-// load .env file
-dotenv.config();
-
-const port = '3000';
-
+const port = "3000";
 // Setup static express server
 const app = express();
 
-app.use(express.static('build'));
+app.use(express.static("build"));
 
 const listenPort = process.env.PORT || port;
 app.listen(listenPort);
 console.log(`Listening on port ${listenPort}`);
 
+//configure server to use express-session
+app.use(
+  session({
+    resave: false,
+    saveUninitialized: true,
+    name: "session",
+    secret: "catSuperSecret",
+    cookie: {
+      secure: false,
+      maxAge: 3 * 60 * 60 * 1000,
+    },
+  })
+);
 
 //Setup mongoDB connection
-mongoose.connect("mongodb+srv://"+process.env.MONGODB_USER+":"+process.env.MONGODB_PASS+"@r-place-cluster.9odz6aw.mongodb.net/?retryWrites=true&w=majority")
-const connection = mongoose.connection
+const mongoURI =
+  "mongodb+srv://" +
+  process.env.MONGODB_USER +
+  ":" +
+  process.env.MONGODB_PASS +
+  "@" +
+  process.env.MONGODB_HOST;
+//connect to server
+mongoose.connect(mongoURI);
+const connection = mongoose.connection;
 
-const user1 = new Users({
-    user: "michael",
-    timeOfLastEdit: Date.now()
-})
-user1.save()
-console.log('running')
+//verify conenction
+connection.once("open", async () => {
+  console.log("DB Connected");
+});
 
-connection.once('open', async ()=>{
-    console.log("DB Connected")
-    
-    await Users.find({}, (error: any, docs: IUser[])=>{
-        for(const user in docs){
-            console.log(user)
-        }
 
-    })
-})
 
-app.on('listening', async ()=>{
-    console.log("listening")
-    
-})
+/* Routing */
+app.use("/login", authRouter);
+app.use("/logout", (req:Request, res:Response, next) => {
+  req.logOut(function (err) {
+    if (err) {
+      return next(err);
+    }
+    res.redirect("/login");
+  });
+});
+
+app.use(["/", "/load"], checkAuthentication, async (req, res) => {
+    const data = await Users.findOne({ github_id: req.session.user?.github_id });
+    res.send(data?.timeOfLastEdit)
+
+});
+
+app.use("/updateCell", checkAuthentication, gridRouter);
+app.use("/cell", checkAuthentication, gridRouter);
+app.use("/grid", checkAuthentication,gridRouter);
