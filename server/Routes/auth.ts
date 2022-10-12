@@ -3,9 +3,7 @@ import passport from "passport";
 import {Strategy as GithubStrategy} from "passport-github2";
 import  User, {IUser } from "../DB_Schema/userSchema.js";
 import * as dotenv from "dotenv";
-dotenv.config({ path: "../../.env" });
-
-
+dotenv.config({ path: ".env" });
 const router = express.Router();
 
 passport.serializeUser((user:any, cb:Function) => {
@@ -16,6 +14,7 @@ passport.deserializeUser((id:IUser, cb) => {
   cb(null, id);
 });
 
+console.log(process.env.GITHUB_CLIENT_SECRET)
 passport.use(
   new GithubStrategy(
     {
@@ -59,13 +58,13 @@ router.get(
 );
 
 // TODO: update to correct view
-router.use("/", express.static("app/views/login"));
+router.use("/", express.static("build"));
 
-const checkAuthentication = (req:Request, res:Response, next:Function) => {
+const checkAuthentication = (req: Request, res:Response, next:Function) => {
   if (req.isAuthenticated()) {
     return next();
   }
   res.redirect("/login");
 };
 
-export { router, checkAuthentication };
+export {router, checkAuthentication };

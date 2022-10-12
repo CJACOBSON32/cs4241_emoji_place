@@ -3,16 +3,17 @@ import Cell, { ICell } from "./DB_Schema/cellSchema.js";
 import Users, { IUser } from "./DB_Schema/userSchema.js";
 import mongoose, { Collection } from "mongoose";
 import * as dotenv from "dotenv";
+import passport from "passport";
 import session from "express-session";
 import {router as authRouter, checkAuthentication} from "./Routes/auth.js"
 import {router as gridRouter} from './Routes/gridRouter.js'
-dotenv.config({ path: "../.env" });
+dotenv.config({ path: ".env" });
 
 const port = "3000";
 // Setup static express server
 const app = express();
 
-app.use(express.static("build"));
+//app.use(express.static("build"));
 
 const listenPort = process.env.PORT || port;
 app.listen(listenPort);
@@ -31,6 +32,9 @@ app.use(
     },
   })
 );
+
+app.use(passport.initialize())
+app.use(passport.session())
 
 //Setup mongoDB connection
 const mongoURI =
@@ -52,7 +56,12 @@ connection.once("open", async () => {
 
 
 /* Routing */
+app.use("/updateCell", gridRouter);
+app.use("/cell", gridRouter);
+app.use("/grid",gridRouter);
 app.use("/login", authRouter);
+
+
 app.use("/logout", (req:Request, res:Response, next) => {
   req.logOut(function (err) {
     if (err) {
@@ -62,12 +71,9 @@ app.use("/logout", (req:Request, res:Response, next) => {
   });
 });
 
-app.use(["/", "/load"], checkAuthentication, async (req, res) => {
-    const data = await Users.findOne({ github_id: req.session.user?.github_id });
-    res.send(data?.timeOfLastEdit)
+app.use(["/", "/load"], checkAuthentication,async (req, res) => {
+  res.redirect('/grid');
+  // const data = await Users.findOne({ github_id: req.session.user?.github_id });
+    // res.send(data?.timeOfLastEdit)
 
 });
-
-app.use("/updateCell", checkAuthentication, gridRouter);
-app.use("/cell", checkAuthentication, gridRouter);
-app.use("/grid", checkAuthentication,gridRouter);

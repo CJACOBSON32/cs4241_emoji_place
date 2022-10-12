@@ -7,10 +7,11 @@ const grid = Array(GRIDSIZE);
  * Handles the routing for cell updates and requests
  */
 const router = express.Router();
-router.get("/grid", (req, res) => {
+router.get("/", (req, res) => {
     if (grid[0] === undefined) {
         populateArray();
     }
+    res.send('hello');
 });
 async function populateArray() {
     await Cell.find({}, (error, docs) => {

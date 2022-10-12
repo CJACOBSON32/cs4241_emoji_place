@@ -10,10 +10,11 @@ const grid = Array<ICell>(GRIDSIZE);
  */
 const router = express.Router();
 
-router.get("/grid", (req:Request, res:Response)=>{
+router.get("/", (req:Request, res:Response)=>{
   if(grid[0] === undefined){
     populateArray()
   }
+  res.send('hello')
 })
 
 async function populateArray(){
